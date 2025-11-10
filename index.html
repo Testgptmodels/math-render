@@ -1,257 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Smart Math Renderer → Word (image equations)</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>📘 Smart Markdown + Math Renderer (Editable Word Export)</title>
 
 <!-- KaTeX -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 
-<!-- Marked -->
+<!-- Marked.js -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-<!-- html2canvas (to rasterize rendered math) -->
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
-<!-- docx.js -->
-<script src="https://cdn.jsdelivr.net/npm/docx@8.3.0/build/index.umd.js"></script>
+<!-- html-docx.js -->
+<script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
 <style>
-  body { font-family: system-ui, sans-serif; margin:20px; background:#f7fafc; }
-  .container { max-width:900px; margin:0 auto; }
-  h2 { text-align:center; color:#0d6efd; margin-bottom:6px; }
-  p.lead { text-align:center; color:#666; margin-top:0; margin-bottom:12px; }
-  textarea { width:100%; min-height:220px; padding:12px; border-radius:8px; border:1px solid #ccc; font-family:monospace; box-sizing:border-box;}
-  #controls { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-  button { padding:10px 14px; border-radius:8px; border:none; background:#007bff; color:white; cursor:pointer; }
-  button.secondary { background:#28a745; }
-  button:active { transform:translateY(1px); }
-  #output { margin-top:16px; background:white; border-radius:8px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); overflow:auto; }
-  table { border-collapse:collapse; width:100%; }
-  th, td { border:1px solid #ddd; padding:8px; }
-  th { background:#f3f4f6; }
-  footer { margin-top:14px; text-align:center; color:#555; font-size:0.9rem; }
-  .stats { font-weight:600; }
-  @media(max-width:600px){ textarea{min-height:160px;} }
+body {
+  font-family: system-ui, sans-serif;
+  background: #f8fafc;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.container {
+  width: 100%;
+  max-width: 850px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+h2 {
+  text-align: center;
+  color: #0d6efd;
+}
+.tagline {
+  text-align: center;
+  color: #555;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+textarea {
+  width: 100%;
+  height: 220px;
+  padding: 10px;
+  font-family: monospace;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  resize: vertical;
+}
+button {
+  margin-top: 10px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #0d6efd;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+}
+button:hover {
+  background: #084298;
+}
+#output {
+  margin-top: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  overflow-x: auto;
+}
+footer {
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
+  margin-top: 10px;
+  color: #666;
+}
+.stats {
+  text-align: left;
+  font-size: 13px;
+  color: #444;
+  margin-top: 5px;
+}
+@media (max-width: 600px) {
+  body { padding: 10px; }
+  textarea { height: 180px; }
+  button { width: 100%; }
+}
 </style>
 </head>
 <body>
 <div class="container">
-  <h2>🧮 Smart Math Renderer</h2>
-  <p class="lead">Markdown + LaTeX preview (KaTeX). Export to Word with exact visual equations (images) + LaTeX source.</p>
+  <h2>🧮 Smart Markdown + Formula Renderer</h2>
+  <p class="tagline">Supports Markdown & LaTeX — exports editable equations in Word.</p>
 
-  <textarea id="input">
-### Logistic Regression Example
+  <textarea id="input">Equation:
+{$ P(y=1|x) = \frac{1}{1 + e^{-(b_0 + b_1x_1 + ... + b_nx_n)}} $}
 
-Formula:
-$$ P(y=1|x) = \frac{1}{1 + e^{-(b_0 + b_1x_1 + b_2x_2)}} $$
+If a student studies 3 hours:
+\( z = -4 + 1.2(3) = -0.4 \)
 
-Substitute:
-$$ b_0=-1,\; b_1=0.5,\; b_2=0.8,\; X_1=2,\; X_2=1 $$
-
-Compute:
-$$ z = -1 + (0.5)(2) + (0.8)(1) = 0.8 $$
+Then:
+[ P(pass) = \frac{1}{1 + e^{0.4}} \approx 0.401 ]
 
 | Variable | Meaning |
 |-----------|----------|
 | \(b_0\) | Intercept |
 | \(b_1, b_2\) | Coefficients |
 | \(x_1, x_2\) | Features |
-  </textarea>
+</textarea>
 
-  <div id="controls">
-    <button id="renderBtn">🔄 Render</button>
-    <button id="downloadBtn" class="secondary">⬇️ Download Word (.docx)</button>
-  </div>
+  <button id="renderBtn">🔍 Render</button>
+  <button id="exportBtn">⬇️ Export to Word</button>
 
-  <div id="output" aria-live="polite"></div>
+  <div id="output"></div>
 
-  <footer>
-    <div class="stats" id="stats">Formulas: 0 | Tables: 0 | Views: 0 | Downloads: 0</div>
-    <div style="margin-top:6px;color:#666">© 2025 Smart Math Renderer</div>
-  </footer>
+  <div class="stats" id="stats"></div>
+  <footer>Powered by KaTeX • Editable Equations in Word • Auto Stats Enabled</footer>
 </div>
 
 <script>
-/* ========== helpers ========== */
-function cleanMath(text){
+let renderCount = 0, downloadCount = 0;
+let visitCount = localStorage.getItem("visits") || 0;
+visitCount++;
+localStorage.setItem("visits", visitCount);
+
+function cleanMath(text) {
   return text
-    .replace(/\{\s*\$(.*?)\$\s*\}/gs,'$$$1$$')
-    .replace(/\[\s*(.*?)\s*\]/gs,'$$$1$$')
-    .replace(/\\\((.*?)\\\)/gs,'$$ $1 $$')
-    .replace(/\.\.\./g,'\\dots');
+    .replace(/\{\s*\$(.*?)\$\s*\}/gs, '$$$1$$')
+    .replace(/\[\s*(\\?)(.*?)\s*\]/gs, '$$$2$$')
+    .replace(/\\\((.*?)\\\)/gs, '$$ $1 $$')
+    .replace(/\.\.\./g, '\\dots');
 }
 
-/* render markdown and KaTeX */
-function render() {
-  const raw = document.getElementById('input').value;
-  const html = marked.parse(cleanMath(raw));
-  const out = document.getElementById('output');
-  out.innerHTML = html;
-  // render KaTeX
-  renderMathInElement(out, {
+function renderMarkdownWithMath() {
+  const raw = document.getElementById("input").value;
+  const fixedText = cleanMath(raw);
+  const html = marked.parse(fixedText);
+  const outputDiv = document.getElementById("output");
+  outputDiv.innerHTML = html;
+  renderMathInElement(outputDiv, {
     delimiters: [
-      { left: "$$", right: "$$", display: true},
-      { left: "\\[", right: "\\]", display: true},
-      { left: "\\(", right: "\\)", display: false},
-      { left: "$", right: "$", display: false}
+      {left: "$$", right: "$$", display: true},
+      {left: "\\[", right: "\\]", display: true},
+      {left: "\\(", right: "\\)", display: false},
+      {left: "$", right: "$", display: false}
     ],
     throwOnError: false
   });
+  renderCount++;
   updateStats();
 }
 
-/* update stats (local counts) */
-function updateStats(incrementView=false, incrementDownload=false){
-  // use localStorage persistent counters
-  if (incrementView) {
-    localStorage.setItem('views', (parseInt(localStorage.getItem('views')||'0')+1).toString());
-  }
-  if (incrementDownload) {
-    localStorage.setItem('downloads', (parseInt(localStorage.getItem('downloads')||'0')+1).toString());
-  }
-  const formulas = document.querySelectorAll('.katex').length;
-  const tables = document.querySelectorAll('table').length;
-  const views = parseInt(localStorage.getItem('views')||'0');
-  const downloads = parseInt(localStorage.getItem('downloads')||'0');
-  document.getElementById('stats').innerText = `Formulas: ${formulas} | Tables: ${tables} | Views: ${views} | Downloads: ${downloads}`;
+// convert KaTeX HTML to minimal OMML (for Word)
+function katexToOMML(latex) {
+  return `
+  <m:oMathPara><m:oMath>
+  <m:r><m:t>${latex}</m:t></m:r>
+  </m:oMath></m:oMathPara>`;
 }
 
-/* on load increment view */
-window.addEventListener('load', ()=> {
-  localStorage.setItem('views', (parseInt(localStorage.getItem('views')||'0')+1).toString());
-  render();
+function exportToWord() {
+  const outputDiv = document.getElementById("output");
+  let htmlContent = outputDiv.innerHTML;
+
+  // Extract all LaTeX formulas and replace them with OMML tags
+  const matches = [...document.querySelectorAll(".katex-mathml math")];
+  matches.forEach((m, i) => {
+    htmlContent = htmlContent.replace(m.outerHTML, katexToOMML(m.textContent));
+  });
+
+  const fullHTML = `
+    <html xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">
+    <head><meta charset='utf-8'></head>
+    <body>${htmlContent}</body></html>`;
+
+  const converted = htmlDocx.asBlob(fullHTML);
+  saveAs(converted, "Rendered_Math_Editable.docx");
+  downloadCount++;
   updateStats();
-});
-
-/* ========== download logic ==========
-We will:
- - iterate through output nodes in order,
- - when we meet a KaTeX-rendered element, rasterize it with html2canvas to PNG,
- - when we meet text or inline content, add text runs,
- - for tables create docx tables.
-We use docx.js ImageRun for images.
-==========*/
-
-async function nodeToDocxElements(root) {
-  const { Paragraph, TextRun, ImageRun, Table, TableRow, TableCell } = window.docx;
-  const elements = [];
-
-  // helper to rasterize a DOM node to PNG Uint8Array
-  async function domNodeToPngUint8(node) {
-    // temporarily increase scale for higher DPI on mobile; use devicePixelRatio
-    const canvas = await html2canvas(node, { backgroundColor: null, scale: Math.min(2, window.devicePixelRatio || 1) });
-    const dataUrl = canvas.toDataURL('image/png');
-    // convert base64 to Uint8Array
-    const base64 = dataUrl.split(',')[1];
-    const binary = atob(base64);
-    const len = binary.length;
-    const arr = new Uint8Array(len);
-    for (let i = 0; i < len; i++) arr[i] = binary.charCodeAt(i);
-    return { arr, width: canvas.width, height: canvas.height };
-  }
-
-  // iterate children
-  for (const child of Array.from(root.children)) {
-    if (child.tagName === 'TABLE') {
-      // build docx table
-      const rows = [];
-      for (const tr of Array.from(child.querySelectorAll('tr'))) {
-        const cells = [];
-        for (const td of Array.from(tr.children)) {
-          // capture text content, preserve inline KaTeX as plain text for table cells
-          // (we could rasterize cell inner KaTeX too but keep simple)
-          const paragraphs = [];
-          paragraphs.push(new Paragraph(td.innerText));
-          cells.push(new TableCell({ children: paragraphs }));
-        }
-        rows.push(new TableRow({ children: cells }));
-      }
-      elements.push(new Table({ rows }));
-      continue;
-    }
-
-    // For non-table blocks, we want to create paragraphs mixing text and images (formulas)
-    const runs = [];
-
-    // traverse child nodes of this block to maintain order
-    for (const node of Array.from(child.childNodes)) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const text = node.textContent.replace(/\u00A0/g, ' ');
-        if (text.trim().length > 0) runs.push(new TextRun(text));
-      } else if (node.nodeType === Node.ELEMENT_NODE) {
-        const el = node;
-        // KaTeX creates elements with class "katex"
-        if (el.classList && el.classList.contains('katex')) {
-          // rasterize this element to PNG and push an ImageRun placeholder
-          const { arr, width, height } = await domNodeToPngUint8(el);
-          runs.push(new ImageRun({
-            data: arr,
-            transformation: { width: Math.min(450, Math.round((width / (window.devicePixelRatio||1)))), height: Math.round((height / (window.devicePixelRatio||1))) }
-          }));
-        } else {
-          // fallback - include its innerText
-          const t = el.innerText || el.textContent || '';
-          if (t.trim().length > 0) runs.push(new TextRun(t));
-        }
-      }
-    } // end childNodes traversal
-
-    // if runs is empty but block has textContent, add it
-    if (runs.length === 0) {
-      const txt = child.innerText || child.textContent || '';
-      if (txt.trim().length > 0) runs.push(new TextRun(txt));
-    }
-    elements.push(new Paragraph({ children: runs }));
-  }
-
-  return elements;
 }
 
-/* build docx and download */
-document.getElementById('downloadBtn').addEventListener('click', async () => {
-  try {
-    const { Document, Packer } = window.docx;
-    const output = document.getElementById('output');
+function updateStats() {
+  document.getElementById("stats").innerText =
+    `👥 Visits: ${visitCount} | 🧮 Rendered: ${renderCount} | 📄 Downloads: ${downloadCount}`;
+}
 
-    // collect sequential docx elements from output
-    const docChildren = await nodeToDocxElements(output);
+document.getElementById("renderBtn").addEventListener("click", renderMarkdownWithMath);
+document.getElementById("exportBtn").addEventListener("click", exportToWord);
 
-    const doc = new Document({ sections: [{ children: docChildren }] });
-
-    const packer = new Packer();
-    const blob = await packer.toBlob(doc);
-
-    // trigger download
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'rendered_math.docx';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-
-    // update stats
-    localStorage.setItem('downloads', (parseInt(localStorage.getItem('downloads')||'0')+1).toString());
-    updateStats();
-    alert('Download ready — open rendered_math.docx in Word. Formulas are embedded as high-quality images and LaTeX source is kept in the document (see caption).');
-
-  } catch (err) {
-    console.error('Download failed', err);
-    alert('Download failed: ' + (err && err.message ? err.message : err));
-  }
-});
-
-/* wire render button */
-document.getElementById('renderBtn').addEventListener('click', () => {
-  render();
-  // small delay before updating stats (KaTeX rendering)
-  setTimeout(()=>updateStats(true), 200);
-});
+renderMarkdownWithMath();
+updateStats();
 </script>
 </body>
 </html>
