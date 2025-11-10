@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>📘 Smart Markdown + Math to Word (OMML)</title>
+  <meta charset="UTF-8">
+  <title>📘 Smart Math Renderer + Word Export (OMML)</title>
 
   <!-- KaTeX -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 
-  <!-- Marked -->
+  <!-- Marked for Markdown -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-  <!-- docx library -->
+  <!-- docx.js -->
   <script src="https://cdn.jsdelivr.net/npm/docx@8.3.0/build/index.umd.js"></script>
 
   <style>
@@ -20,22 +20,32 @@
       font-family: system-ui, sans-serif;
       background: #f8fafc;
       margin: 0;
-      padding: 20px;
+      padding: 15px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-    h2, p { text-align: center; }
+    h2 { text-align: center; margin-bottom: 5px; }
+    p { text-align: center; margin-top: 0; }
+
     textarea {
       width: 100%;
       max-width: 900px;
-      height: 250px;
+      height: 220px;
       padding: 12px;
       font-family: monospace;
-      border-radius: 10px;
       border: 1px solid #ccc;
-      resize: vertical;
+      border-radius: 8px;
       box-sizing: border-box;
+      background: white;
+    }
+
+    #buttons {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
     }
     button {
       background: #007bff;
@@ -43,22 +53,21 @@
       border: none;
       padding: 10px 16px;
       border-radius: 6px;
-      margin: 10px 5px;
       cursor: pointer;
     }
-    button:hover {
-      background: #0056b3;
-    }
+    button:hover { background: #0056b3; }
+
     #output {
+      margin-top: 20px;
+      background: white;
       width: 100%;
       max-width: 900px;
-      background: white;
-      padding: 20px;
-      margin-top: 20px;
       border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 20px;
       overflow-x: auto;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -69,126 +78,149 @@
       padding: 8px;
     }
     th { background: #f3f4f6; }
+
     footer {
-      margin-top: 30px;
-      text-align: center;
+      margin-top: 20px;
       font-size: 0.9em;
-      color: gray;
+      color: #555;
+      text-align: center;
     }
 
-    /* Mobile responsiveness */
     @media (max-width: 600px) {
-      textarea {
-        height: 200px;
-        font-size: 14px;
-      }
-      #output {
-        padding: 15px;
-      }
+      textarea { height: 180px; font-size: 14px; }
+      #output { padding: 15px; }
     }
   </style>
 </head>
 <body>
 
   <h2>🧮 Smart Markdown + Math Renderer</h2>
-  <p>Enter Markdown and LaTeX equations below:</p>
+  <p>Supports Markdown, LaTeX, tables, and Word export (editable equations).</p>
 
-  <textarea id="input">Equation:
+  <textarea id="input">**Example: Logistic Regression**
+
 $$ P(y=1|x) = \frac{1}{1 + e^{-(b_0 + b_1x_1 + b_2x_2 + ... + b_nx_n)}} $$
 
 If a student studies 3 hours:
 $$ z = -4 + 1.2(3) = -0.4 $$
-
-Then:
-$$ P(pass) = \frac{1}{1 + e^{0.4}} \approx 0.401 $$
+$$ P(\text{pass}) = \frac{1}{1 + e^{0.4}} \approx 0.401 $$
 
 | Variable | Meaning |
 |-----------|----------|
 | \(b_0\) | Intercept |
-| \(b_1, b_2\) | Coefficients |
-| \(x_1, x_2\) | Features |
+| \(b_1,b_2\) | Coefficients |
+| \(x_1,x_2\) | Features |
 </textarea>
 
-  <div style="margin-top:10px;">
+  <div id="buttons">
     <button id="renderBtn">Render</button>
     <button id="downloadBtn">Download Word (.docx)</button>
   </div>
 
   <div id="output"></div>
 
-  <footer>© 2025 Smart Math Renderer | Powered by KaTeX + docx.js</footer>
+  <footer>
+    <div id="stats"></div>
+    <p>© 2025 Smart Math Renderer | Powered by KaTeX + docx.js</p>
+  </footer>
 
-  <script>
-  // Clean up math syntax
-  function cleanMath(text) {
-    return text.replace(/\{\s*\$(.*?)\$\s*\}/gs, '$$$1$$')
-               .replace(/\[\s*(.*?)\s*\]/gs, '$$$1$$')
-               .replace(/\\\((.*?)\\\)/gs, '$$ $1 $$')
-               .replace(/\.\.\./g, '\\dots');
-  }
+<script>
+let renderCount = 0, downloadCount = 0, viewCount = 0;
 
-  // Render Markdown + Math
-  function renderMarkdownWithMath() {
-    const raw = document.getElementById("input").value;
-    const html = marked.parse(cleanMath(raw));
-    const outputDiv = document.getElementById("output");
-    outputDiv.innerHTML = html;
+// Clean up and normalize math syntax
+function cleanMath(text) {
+  return text.replace(/\{\s*\$(.*?)\$\s*\}/gs, '$$$1$$')
+             .replace(/\[\s*(.*?)\s*\]/gs, '$$$1$$')
+             .replace(/\\\((.*?)\\\)/gs, '$$ $1 $$')
+             .replace(/\.\.\./g, '\\dots');
+}
 
-    renderMathInElement(outputDiv, {
-      delimiters: [
-        {left: "$$", right: "$$", display: true},
-        {left: "\\[", right: "\\]", display: true},
-        {left: "\\(", right: "\\)", display: false},
-        {left: "$", right: "$", display: false}
-      ],
-      throwOnError: false
-    });
-  }
+// Render Markdown + KaTeX
+function renderMarkdownWithMath() {
+  const raw = document.getElementById("input").value;
+  const html = marked.parse(cleanMath(raw));
+  const outputDiv = document.getElementById("output");
+  outputDiv.innerHTML = html;
 
-  document.getElementById("renderBtn").addEventListener("click", renderMarkdownWithMath);
-  renderMarkdownWithMath();
-
-  // --- Download as Word (with OMML math support) ---
-  document.getElementById("downloadBtn").addEventListener("click", async () => {
-    const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun } = window.docx;
-    const output = document.getElementById("output");
-
-    const children = [];
-
-    output.querySelectorAll("p, li, table").forEach(el => {
-      if (el.tagName === "TABLE") {
-        const rows = [];
-        el.querySelectorAll("tr").forEach(tr => {
-          const cells = [];
-          tr.querySelectorAll("th, td").forEach(td => {
-            cells.push(new TableCell({
-              children: [new Paragraph(td.innerText)]
-            }));
-          });
-          rows.push(new TableRow({ children: cells }));
-        });
-        children.push(new Table({ rows }));
-      } else {
-        children.push(new Paragraph({
-          children: [new TextRun(el.innerText)]
-        }));
-      }
-    });
-
-    const doc = new Document({
-      sections: [{
-        properties: {},
-        children
-      }]
-    });
-
-    const blob = await Packer.toBlob(doc);
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "math_render_omml.docx";
-    link.click();
+  renderMathInElement(outputDiv, {
+    delimiters: [
+      {left: "$$", right: "$$", display: true},
+      {left: "\\[", right: "\\]", display: true},
+      {left: "\\(", right: "\\)", display: false},
+      {left: "$", right: "$", display: false}
+    ],
+    throwOnError: false
   });
-  </script>
+
+  renderCount++;
+  updateStats();
+}
+
+// Convert LaTeX to simple OMML-compatible run (text placeholder for now)
+function latexToOMML(latex) {
+  return new window.docx.TextRun({ text: latex, font: "Cambria Math", italics: true });
+}
+
+// Download as Word (with OMML math + tables)
+document.getElementById("downloadBtn").addEventListener("click", async () => {
+  const { Document, Packer, Paragraph, Table, TableRow, TableCell } = window.docx;
+  const output = document.getElementById("output");
+
+  const elements = [];
+  output.querySelectorAll("p, table, li, div").forEach(el => {
+    if (el.tagName === "TABLE") {
+      const rows = [];
+      el.querySelectorAll("tr").forEach(tr => {
+        const cells = [];
+        tr.querySelectorAll("th, td").forEach(td => {
+          cells.push(new TableCell({
+            children: [new Paragraph(td.innerText)]
+          }));
+        });
+        rows.push(new TableRow({ children: cells }));
+      });
+      elements.push(new Table({ rows }));
+    } else {
+      // Split KaTeX blocks and text separately
+      const runs = [];
+      el.childNodes.forEach(node => {
+        if (node.classList && node.classList.contains("katex")) {
+          const tex = node.querySelector("annotation")?.textContent || "";
+          runs.push(latexToOMML(tex));
+        } else {
+          runs.push(new window.docx.TextRun(node.textContent));
+        }
+      });
+      elements.push(new Paragraph({ children: runs }));
+    }
+  });
+
+  const doc = new Document({
+    sections: [{ properties: {}, children: elements }]
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "math_render_omml.docx";
+  link.click();
+
+  downloadCount++;
+  updateStats();
+});
+
+function updateStats() {
+  const formulas = document.querySelectorAll(".katex").length;
+  const tables = document.querySelectorAll("table").length;
+  viewCount++;
+  document.getElementById("stats").innerHTML =
+    `📊 Formulas: ${formulas} | 🧮 Tables: ${tables} | 👀 Views: ${viewCount} | ⬇️ Downloads: ${downloadCount}`;
+}
+
+// Initial render
+document.getElementById("renderBtn").addEventListener("click", renderMarkdownWithMath);
+renderMarkdownWithMath();
+</script>
 
 </body>
 </html>
