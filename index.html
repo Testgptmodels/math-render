@@ -1,78 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>📘 Smart Markdown + Math Renderer + Word Export</title>
+  <meta charset="UTF-8" />
+  <title>📘 Smart Markdown + Math to Word (OMML)</title>
 
-<!-- KaTeX -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 
-<!-- Marked.js -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Marked -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-<!-- docx.js -->
-<script src="https://cdn.jsdelivr.net/npm/docx@8.3.0/build/index.umd.js"></script>
+  <!-- docx library -->
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.3.0/build/index.umd.js"></script>
 
-<style>
-  body {
-    font-family: system-ui, sans-serif;
-    margin: 20px;
-    background: #f8fafc;
-  }
-  textarea {
-    width: 100%;
-    height: 250px;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-  }
-  button {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
-  button:hover {
-    background: #0056b3;
-  }
-  #output {
-    margin-top: 20px;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-  }
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 10px;
-  }
-  th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-  }
-  th {
-    background: #f3f4f6;
-  }
-  footer {
-    text-align: center;
-    font-size: 0.9em;
-    margin-top: 25px;
-    color: gray;
-  }
-</style>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f8fafc;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h2, p { text-align: center; }
+    textarea {
+      width: 100%;
+      max-width: 900px;
+      height: 250px;
+      padding: 12px;
+      font-family: monospace;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      margin: 10px 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #output {
+      width: 100%;
+      max-width: 900px;
+      background: white;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th { background: #f3f4f6; }
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 0.9em;
+      color: gray;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 600px) {
+      textarea {
+        height: 200px;
+        font-size: 14px;
+      }
+      #output {
+        padding: 15px;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<h2 style="text-align:center;">🧮 Smart Markdown + Formula Renderer</h2>
-<p style="text-align:center;">Type text or equations (Markdown + LaTeX supported)</p>
+  <h2>🧮 Smart Markdown + Math Renderer</h2>
+  <p>Enter Markdown and LaTeX equations below:</p>
 
-<textarea id="input">Equation:
+  <textarea id="input">Equation:
 $$ P(y=1|x) = \frac{1}{1 + e^{-(b_0 + b_1x_1 + b_2x_2 + ... + b_nx_n)}} $$
 
 If a student studies 3 hours:
@@ -88,82 +109,86 @@ $$ P(pass) = \frac{1}{1 + e^{0.4}} \approx 0.401 $$
 | \(x_1, x_2\) | Features |
 </textarea>
 
-<br>
-<button id="renderBtn">Render</button>
-<button id="downloadBtn">Download Word (.docx)</button>
+  <div style="margin-top:10px;">
+    <button id="renderBtn">Render</button>
+    <button id="downloadBtn">Download Word (.docx)</button>
+  </div>
 
-<div id="output"></div>
+  <div id="output"></div>
 
-<footer>© 2025 Smart Math Renderer | Powered by KaTeX + docx.js</footer>
+  <footer>© 2025 Smart Math Renderer | Powered by KaTeX + docx.js</footer>
 
-<script>
-function cleanMath(text) {
-  let cleaned = text;
-  cleaned = cleaned.replace(/\{\s*\$(.*?)\$\s*\}/gs, '$$$1$$');
-  cleaned = cleaned.replace(/\[\s*(.*?)\s*\]/gs, '$$$1$$');
-  cleaned = cleaned.replace(/\\\((.*?)\\\)/gs, '$$$1$$');
-  cleaned = cleaned.replace(/\.\.\./g, '\\dots');
-  return cleaned;
-}
+  <script>
+  // Clean up math syntax
+  function cleanMath(text) {
+    return text.replace(/\{\s*\$(.*?)\$\s*\}/gs, '$$$1$$')
+               .replace(/\[\s*(.*?)\s*\]/gs, '$$$1$$')
+               .replace(/\\\((.*?)\\\)/gs, '$$ $1 $$')
+               .replace(/\.\.\./g, '\\dots');
+  }
 
-function renderMarkdownWithMath() {
-  const raw = document.getElementById("input").value;
-  const fixedText = cleanMath(raw);
-  const html = marked.parse(fixedText);
-  const outputDiv = document.getElementById("output");
-  outputDiv.innerHTML = html;
-  renderMathInElement(outputDiv, {
-    delimiters: [
-      {left: "$$", right: "$$", display: true},
-      {left: "\\[", right: "\\]", display: true},
-      {left: "\\(", right: "\\)", display: false},
-      {left: "$", right: "$", display: false}
-    ],
-    throwOnError: false
-  });
-}
+  // Render Markdown + Math
+  function renderMarkdownWithMath() {
+    const raw = document.getElementById("input").value;
+    const html = marked.parse(cleanMath(raw));
+    const outputDiv = document.getElementById("output");
+    outputDiv.innerHTML = html;
 
-document.getElementById("renderBtn").addEventListener("click", renderMarkdownWithMath);
-renderMarkdownWithMath();
-
-document.getElementById("downloadBtn").addEventListener("click", async () => {
-  const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun } = window.docx;
-  const outputDiv = document.getElementById("output");
-
-  const paras = [];
-  outputDiv.querySelectorAll("p, div, li").forEach(el => {
-    paras.push(new Paragraph(el.innerText));
-  });
-
-  const tables = [];
-  outputDiv.querySelectorAll("table").forEach(tbl => {
-    const rows = [];
-    tbl.querySelectorAll("tr").forEach(tr => {
-      const cells = [];
-      tr.querySelectorAll("th, td").forEach(td => {
-        cells.push(new TableCell({
-          children: [new Paragraph(td.innerText)]
-        }));
-      });
-      rows.push(new TableRow({ children: cells }));
+    renderMathInElement(outputDiv, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "\\[", right: "\\]", display: true},
+        {left: "\\(", right: "\\)", display: false},
+        {left: "$", right: "$", display: false}
+      ],
+      throwOnError: false
     });
-    tables.push(new Table({ rows }));
-  });
+  }
 
-  const doc = new Document({
-    sections: [{
-      properties: {},
-      children: [...paras, ...tables]
-    }]
-  });
+  document.getElementById("renderBtn").addEventListener("click", renderMarkdownWithMath);
+  renderMarkdownWithMath();
 
-  const blob = await Packer.toBlob(doc);
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "math_render.docx";
-  link.click();
-});
-</script>
+  // --- Download as Word (with OMML math support) ---
+  document.getElementById("downloadBtn").addEventListener("click", async () => {
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun } = window.docx;
+    const output = document.getElementById("output");
+
+    const children = [];
+
+    output.querySelectorAll("p, li, table").forEach(el => {
+      if (el.tagName === "TABLE") {
+        const rows = [];
+        el.querySelectorAll("tr").forEach(tr => {
+          const cells = [];
+          tr.querySelectorAll("th, td").forEach(td => {
+            cells.push(new TableCell({
+              children: [new Paragraph(td.innerText)]
+            }));
+          });
+          rows.push(new TableRow({ children: cells }));
+        });
+        children.push(new Table({ rows }));
+      } else {
+        children.push(new Paragraph({
+          children: [new TextRun(el.innerText)]
+        }));
+      }
+    });
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children
+      }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "math_render_omml.docx";
+    link.click();
+  });
+  </script>
 
 </body>
 </html>
