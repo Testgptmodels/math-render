@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>📘 Smart Markdown + Math Renderer (Editable Word Export)</title>
+<title>📘 Smart Markdown + Math Renderer</title>
 
 <!-- KaTeX -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 
-<!-- Marked.js -->
+<!-- Marked.js for Markdown -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-<!-- html-docx.js -->
+<!-- html-docx.js for Word export -->
 <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
@@ -98,10 +98,10 @@ footer {
 <body>
 <div class="container">
   <h2>🧮 Smart Markdown + Formula Renderer</h2>
-  <p class="tagline">Supports Markdown & LaTeX — exports editable equations in Word.</p>
+  <p class="tagline">Supports Markdown & LaTeX math — render and export your equations to Word.</p>
 
   <textarea id="input">Equation:
-{$ P(y=1|x) = \frac{1}{1 + e^{-(b_0 + b_1x_1 + ... + b_nx_n)}} $}
+{$ P(y=1|x) = \frac{1}{1 + e^{-(b_0 + b_1x_1 + b_2x_2 + ... + b_nx_n)}} $}
 
 If a student studies 3 hours:
 \( z = -4 + 1.2(3) = -0.4 \)
@@ -122,7 +122,7 @@ Then:
   <div id="output"></div>
 
   <div class="stats" id="stats"></div>
-  <footer>Powered by KaTeX • Editable Equations in Word • Auto Stats Enabled</footer>
+  <footer>Powered by KaTeX • Viewable & Printable Word Export</footer>
 </div>
 
 <script>
@@ -132,11 +132,13 @@ visitCount++;
 localStorage.setItem("visits", visitCount);
 
 function cleanMath(text) {
-  return text
-    .replace(/\{\s*\$(.*?)\$\s*\}/gs, '$$$1$$')
-    .replace(/\[\s*(\\?)(.*?)\s*\]/gs, '$$$2$$')
-    .replace(/\\\((.*?)\\\)/gs, '$$ $1 $$')
-    .replace(/\.\.\./g, '\\dots');
+  let cleaned = text;
+  cleaned = cleaned.replace(/\{\s*\$(.*?)\$\s*\}/gs, '$$$1$$');
+  cleaned = cleaned.replace(/\[\s*(\\?)(.*?)\s*\]/gs, '$$$2$$');
+  cleaned = cleaned.replace(/\\\((.*?)\\\)/gs, '$$ $1 $$');
+  cleaned = cleaned.replace(/([_^{])\s*([^\dA-Za-z])/g, '$1{$2}');
+  cleaned = cleaned.replace(/\.\.\./g, '\\dots');
+  return cleaned;
 }
 
 function renderMarkdownWithMath() {
@@ -158,38 +160,20 @@ function renderMarkdownWithMath() {
   updateStats();
 }
 
-// convert KaTeX HTML to minimal OMML (for Word)
-function katexToOMML(latex) {
-  return `
-  <m:oMathPara><m:oMath>
-  <m:r><m:t>${latex}</m:t></m:r>
-  </m:oMath></m:oMathPara>`;
-}
-
 function exportToWord() {
-  const outputDiv = document.getElementById("output");
-  let htmlContent = outputDiv.innerHTML;
-
-  // Extract all LaTeX formulas and replace them with OMML tags
-  const matches = [...document.querySelectorAll(".katex-mathml math")];
-  matches.forEach((m, i) => {
-    htmlContent = htmlContent.replace(m.outerHTML, katexToOMML(m.textContent));
-  });
-
-  const fullHTML = `
-    <html xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">
-    <head><meta charset='utf-8'></head>
-    <body>${htmlContent}</body></html>`;
-
-  const converted = htmlDocx.asBlob(fullHTML);
-  saveAs(converted, "Rendered_Math_Editable.docx");
+  const content = `
+    <html><head><meta charset='utf-8'></head><body>
+    ${document.getElementById("output").innerHTML}
+    </body></html>`;
+  const converted = htmlDocx.asBlob(content);
+  saveAs(converted, "Rendered_Math.docx");
   downloadCount++;
   updateStats();
 }
 
 function updateStats() {
   document.getElementById("stats").innerText =
-    `👥 Visits: ${visitCount} | 🧮 Rendered: ${renderCount} | 📄 Downloads: ${downloadCount}`;
+    `👥 Visits: ${visitCount} | 🧮 Formulas Rendered: ${renderCount} | 📄 Word Downloads: ${downloadCount}`;
 }
 
 document.getElementById("renderBtn").addEventListener("click", renderMarkdownWithMath);
