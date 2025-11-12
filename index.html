@@ -35,9 +35,26 @@ body {
   border-radius: 12px;
   box-shadow: 0 3px 8px rgba(0,0,0,0.1);
 }
+header {
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #0d6efd;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+button:hover { background: #084298; }
 h2 {
   text-align: center;
   color: #0d6efd;
+  margin-top: 0;
 }
 .tagline {
   text-align: center;
@@ -53,19 +70,6 @@ textarea {
   border: 1px solid #ccc;
   border-radius: 8px;
   resize: vertical;
-}
-button {
-  margin-top: 10px;
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  background: #0d6efd;
-  color: white;
-  font-size: 15px;
-  cursor: pointer;
-}
-button:hover {
-  background: #084298;
 }
 #output {
   margin-top: 20px;
@@ -92,11 +96,19 @@ footer {
   body { padding: 10px; }
   textarea { height: 180px; }
   button { width: 100%; }
+  header { flex-direction: column; align-items: flex-start; }
 }
 </style>
 </head>
 <body>
 <div class="container">
+
+  <header>
+    <button id="readmeBtn">📘 README</button>
+    <button id="feedbackBtn">💬 Feedback</button>
+    <button id="supportBtn">💖 Support</button>
+  </header>
+
   <h2>🧮 Smart Markdown + Formula Renderer</h2>
   <p class="tagline">Supports Markdown & LaTeX math — render and export your equations to Word.</p>
 
@@ -122,7 +134,9 @@ Then:
   <div id="output"></div>
 
   <div class="stats" id="stats"></div>
-  <footer>Powered by KaTeX • Viewable & Printable Word Export</footer>
+  <footer>
+    Powered by KaTeX • <a href="#">© Copyright 2025</a> • Developed by <strong>Ambrish G</strong>
+  </footer>
 </div>
 
 <script>
@@ -176,8 +190,37 @@ function updateStats() {
     `👥 Visits: ${visitCount} | 🧮 Formulas Rendered: ${renderCount} | 📄 Word Downloads: ${downloadCount}`;
 }
 
+// Button actions
 document.getElementById("renderBtn").addEventListener("click", renderMarkdownWithMath);
 document.getElementById("exportBtn").addEventListener("click", exportToWord);
+
+document.getElementById("readmeBtn").addEventListener("click", () => {
+  alert(`📘 Formula Rendering Help
+
+If you find any issue in formula rendering, please recheck LaTeX syntax and correction as shown below, then click “Render” again.
+
+• If \\alpha not displayed as “α”, write $\\alpha$ — add $ at beginning and end.
+• When copied from LLMs (e.g., ChatGPT), remove any size markup like [6pt].
+• Use //// for next line or line break.
+
+❌ Error:
+$$J(\\mathbf{w},b)= -\\frac{1}{m}\\sum_{i=1}^{m}\\Big[y^{(i)}\\ln p^{(i)} + (1-y^{(i)})\\ln(1-p^{(i)})\\Big]$$
+
+✅ Corrected:
+J($\\mathbf{w},b$)= $-\\frac{1}{m}\\sum_{i=1}^{m}\\Big[y^{(i)}\\ln p^{(i)} + (1-y^{(i)})\\ln(1-p^{(i)})\\Big)$
+
+📺 Tutorial video: YouTube – Formula Rendering Guide`);
+});
+
+document.getElementById("feedbackBtn").addEventListener("click", () => {
+  window.open("https://docs.google.com/forms/d/e/1FAIpQLSfBWknN_B1aCYr3VO4a9CcNI6ZvLXN1HqBssX195jahliqyoQ/viewform?usp=publish-editor", "_blank");
+});
+
+document.getElementById("supportBtn").addEventListener("click", () => {
+  window.open("https://docs.google.com/forms/d/e/1FAIpQLSfBWknN_B1aCYr3VO4a9CcNI6ZvLXN1HqBssX195jahliqyoQ/viewform?usp=publish-editor", "_blank");
+});
+  //window.open("https://github.com/YOUR_USERNAME/YOUR_REPO/raw/main/gpay_qr.png", "_blank");
+
 
 renderMarkdownWithMath();
 updateStats();
